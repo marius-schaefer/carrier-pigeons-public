@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api, Resource
+from flask_restful import Api, Resource, reqparse
 from db_utils import *
 
 
@@ -25,25 +25,25 @@ api = Api(app)
 class User(Resource):
     def get(self, user_id):
         data = get_user(user_id)
-        user_id = data[0]
-        queue_id = data[1]
+        user_id = data[0][0]
+        queue_id = data[0][1]
 
         return {"user_id" : user_id, "queue_id" : queue_id}
 
     def put(self, user_id):
-        if check_for_user(user_id):
+        if check_for_user(user_id) == True:
             create_user(user_id)
 
             data = get_user(user_id)
-            user_id = data[0]
-            queue_id = data[1]
+            user_id = data[0][0]
+            queue_id = data[0][1]
 
             return {"user_id" : user_id, "queue_id" : queue_id}
         else:
             return "User Already Exists"
 
     def delete(self, user_id):
-        delete_user(user_id):
+        delete_user(user_id)
         
         return f"{user_id} deleted"
 

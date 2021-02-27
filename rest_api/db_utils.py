@@ -27,10 +27,7 @@ def create_user_table():
     c = conn.cursor()
 
     #creates user table
-    c.execute("""CREATE TABLE user (
-            user_id text,
-            queue_id text,
-    )""")
+    c.execute("""CREATE TABLE user (user_id text, queue_id text)""")
     
     conn.commit()
     conn.close()
@@ -43,14 +40,7 @@ def create_queue_table():
     c = conn.cursor()
 
     #creates queue table
-    c.execute("""CREATE TABLE queue (
-            queue_id text,
-            name text,
-            tickets text,
-            curr_ticket,
-            max_occupancy,
-            curr_occupancy,
-    )""")
+    c.execute("""CREATE TABLE queue (queue_id text, name text, tickets text, curr_ticket text, max_occupancy interger, curr_occupancy interger)""")
     
     conn.commit()
     conn.close()
@@ -63,13 +53,7 @@ def create_ticket_table():
     c = conn.cursor()
 
     #creates ticket table
-    c.execute("""CREATE TABLE ticket (
-            ticket_id text,
-            number interger,
-            date_created text,
-            date_enetered text,
-            phone_number text,
-    )""")
+    c.execute("""CREATE TABLE ticket (ticket_id text, number interger, date_created text, date_enetered text, phone_number text)""")
     
     conn.commit()
     conn.close()
@@ -98,7 +82,7 @@ def create_user(user_id):
     #creates cursor
     c = conn.cursor()
 
-    c.execute("INSERT INTO user VALUES (?, None)", (user_id,))
+    c.execute("INSERT INTO user VALUES (?, 'None')", (user_id,))
 
     conn.commit()
     conn.close()
@@ -121,11 +105,11 @@ def check_for_user(user_id):
     #creates cursor
     c = conn.cursor()
 
-    c.execute("SELECT * FROM user WHERE user_id = ?",(user_id,))
+    c.execute("SELECT * FROM user")
 
     data = c.fetchall()
 
-    if data == None:
-        return True
-    else:
+    if user_id in data:
         return False
+    else:
+        return True

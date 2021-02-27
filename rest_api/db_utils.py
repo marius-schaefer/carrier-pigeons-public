@@ -1,6 +1,7 @@
 import sqlite3
 
 
+#DB Initialization Functions:
 def check_for_table(table_name):
     #creates or connects to an existing db
     conn = sqlite3.connect('viqueue.db')
@@ -72,3 +73,59 @@ def create_ticket_table():
     
     conn.commit()
     conn.close()
+
+
+#User Table Functions:
+def get_user(user_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM user WHERE user_id = ?", (user_id,))
+
+    data = c.fetchall()
+
+    conn.commit()
+    conn.close()
+
+    return data
+
+
+def create_user(user_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("INSERT INTO user VALUES (?, None)", (user_id,))
+
+    conn.commit()
+    conn.close()
+
+
+def delete_user(user_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("DELETE from user WHERE user_id = ?", (user_id,))
+
+    conn.commit()
+    conn.close()
+
+def check_for_user(user_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM user WHERE user_id = ?",(user_id,))
+
+    data = c.fetchall()
+
+    if data == None:
+        return True
+    else:
+        return False

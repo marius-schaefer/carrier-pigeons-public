@@ -47,8 +47,35 @@ class User(Resource):
         
         return f"{user_id} deleted"
 
+
+#Queue Argument Parsing:
+queue_put_args = reqparse.RequestParser()
+queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required", required=True)
+
+
+class Queue(Resource):
+    def get(self, name):
+        data = get_queue_data(name)
+        return data
+
+    def put(self, name):
+        if check_queue_name(name):
+            data = queue_put_args.parse_args()
+            create_queue(data, name)
+            data = get_queue_data(name)
+            
+            return data
+        else:
+            return "Queue Name Already Exists"
+
+    def delete(self, name):
+        delete_queue(name)
+        return f"{name} deleted"
+
+
 #Adding Resources:
-api.add_resource(User, "/user/<string:user_id>" )
+api.add_resource(User, "/user/<string:user_id>")
+api.add_resource(Queue, "/queue/<string:name>")
 
 
 

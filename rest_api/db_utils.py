@@ -53,3 +53,22 @@ def create_queue_table():
     
     conn.commit()
     conn.close()
+
+
+def create_ticket_table():
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    #creates ticket table
+    c.execute("""CREATE TABLE ticket (
+            ticket_id text,
+            number interger,
+            date_created text,
+            date_enetered text,
+            phone_number text,
+    )""")
+    
+    conn.commit()
+    conn.close()

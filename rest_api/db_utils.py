@@ -17,3 +17,19 @@ def check_for_table(table_name):
         conn.commit()
         conn.close()
         return False
+
+
+def create_user_table():
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    #creates user table
+    c.execute("""CREATE TABLE user (
+            user_id text,
+            queue_id text,
+    )""")
+    
+    conn.commit()
+    conn.close()

@@ -1,5 +1,6 @@
 import sqlite3
 import random
+import datetime
 
 
 #DB Initialization Functions:
@@ -41,7 +42,7 @@ def create_queue_table():
     c = conn.cursor()
 
     #creates queue table
-    c.execute("""CREATE TABLE queue (queue_id interger, name text, tickets text, curr_ticket text, max_occupancy interger, curr_occupancy interger)""")
+    c.execute("""CREATE TABLE queue (queue_id interger, name text, ticket_prefix text, curr_ticket interger, max_occupancy interger, curr_occupancy interger)""")
     
     conn.commit()
     conn.close()
@@ -54,10 +55,11 @@ def create_ticket_table():
     c = conn.cursor()
 
     #creates ticket table
-    c.execute("""CREATE TABLE ticket (ticket_id text, number interger, date_created text, date_enetered text, phone_number text)""")
+    c.execute("""CREATE TABLE ticket (ticket_id text, queue_id interger, ticket_number interger, date_created text, date_enetered text, phone_number text)""")
     
     conn.commit()
     conn.close()
+
 
 
 #User Table Functions:
@@ -116,6 +118,7 @@ def check_for_user(user_id):
         return True
 
 
+
 #Queue Table Functions
 def generate_queue_id():
     while True:
@@ -145,8 +148,8 @@ def create_queue(data, name):
     num = 0
 
     queue_id = generated_queue_id
-    ticket_name = f"{generated_queue_id}-)"
-    ticket_init = f"{generated_queue_id}-{num})"
+    ticket_prefix = f"{generated_queue_id}-"
+    ticket_init = 0
     max_occupancy = data['max_occupancy']
     
     
@@ -155,7 +158,7 @@ def create_queue(data, name):
     #creates cursor
     c = conn.cursor()
 
-    c.execute("INSERT INTO queue VALUES (?, ?, ?, ?, ?, 0)", (queue_id, name, ticket_name, ticket_init, max_occupancy))
+    c.execute("INSERT INTO queue VALUES (?, ?, ?, ?, ?, 0)", (queue_id, name, ticket_prefix, ticket_init, max_occupancy))
 
     conn.commit()
     conn.close()
@@ -174,7 +177,7 @@ def get_queue_data(name):
     json_formatted_data = {
         'queue_id' : data[0][0],
         'name' : data[0][1],
-        'ticket_name' : data[0][2],
+        'ticket_prefix' : data[0][2],
         'curr_ticket' : data[0][3],
         'max_occupancy' : data[0][4],
         'curr_occupancy' : data[0][5]
@@ -208,6 +211,72 @@ def delete_queue(name):
     c = conn.cursor()
 
     c.execute("DELETE from queue WHERE name = ?", (name,))
+
+    conn.commit()
+    conn.close()
+
+
+
+#Ticket Table Funcitons:
+def get_ticket_data(ticket_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM ticket WHERE ticket_id = ?", (ticket_id,))
+
+    data = c.fetchall()
+
+    conn.commit()
+    conn.close()
+
+    json_formatted_data = {
+        'ticket_id' : data[0][0],
+        'queue_id' : data[0][1],
+        'ticket_number' : data[0][2],
+        'date_created' : data[0][3],
+        'date_entered' : data[0][4],
+        'phone_number' : data[0][5]
+    }
+
+    return_data = {ticket_id : json_formatted_data}
+
+    return return_data
+
+
+def create_ticket(queue_id, phone_number):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
+    data = c.fetchall()
+    curr_ticket = data[0][3]
+    ticket_prefix = data[0][2]
+    new_ticket_number = curr_ticket + 1
+
+    #new data to insert:
+    ticket_id = f"{ticket_prefix}"+ f"{new_ticket_number}" 
+    ticket_number = new_ticket_number
+    date_created = datetime.datetime.now()
+
+    c.execute("INSERT INTO ticket VALUES (?, ?, ?, ?, 'None', ?)", (ticket_id, queue_id, ticket_number, date_created, phone_number))
+    c.execute("UPDATE queue SET curr_ticket = ? WHERE queue_id = ?", (new_ticket_number, queue_id))
+    conn.commit()
+    conn.close()
+
+    return ticket_id
+
+
+def delete_ticket(ticket_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("DELETE from ticket WHERE ticket_id = ?", (ticket_id,))
 
     conn.commit()
     conn.close()

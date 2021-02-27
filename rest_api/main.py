@@ -22,6 +22,8 @@ if not ticket_table_exist:
 app = Flask(__name__)
 api = Api(app)
 
+
+#User API:
 class User(Resource):
     def get(self, user_id):
         data = get_user(user_id)
@@ -53,6 +55,7 @@ queue_put_args = reqparse.RequestParser()
 queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required", required=True)
 
 
+#Queue API:
 class Queue(Resource):
     def get(self, name):
         data = get_queue_data(name)
@@ -73,9 +76,45 @@ class Queue(Resource):
         return f"{name} deleted"
 
 
+#Ticket Argument Parsing:
+ticket_args = reqparse.RequestParser()
+ticket_args.add_argument("ticket_id", type=str, help="ticket_id : (string)")
+ticket_args.add_argument("queue_id", type=int, help="queue_id : (interger)")
+
+ticket_delete_args = reqparse.RequestParser()
+ticket_delete_args.add_argument("phone_number", type=str, help="phone_number : (string)")
+
+
+#Ticket API:
+class Ticket(Resource):
+    def get(self):
+        args = ticket_args.parse_args()
+        ticket_id = args['ticket_id']
+        data = get_ticket_data(ticket_id)
+        return data
+
+    def put(self):
+        args = ticket_args.parse_args()
+        queue_id = args['queue_id']
+        phone_number = args['phone_number']
+        ticket_id = create_ticket(queue_id, phone_number)
+        data = get_ticket_data(ticket_id)
+        return data
+
+
+class Ticket_Delete(Resource):
+    def get(self):
+        args = ticket_args.parse_args()
+        ticket_id = args['ticket_id']
+        delete_ticket(ticket_id)
+        return f"{ticket_id} deleted"
+
+
 #Adding Resources:
 api.add_resource(User, "/user/<string:user_id>")
 api.add_resource(Queue, "/queue/<string:name>")
+api.add_resource(Ticket, "/ticket")
+api.add_resource(Ticket_Delete, "/ticket-delete")
 
 
 

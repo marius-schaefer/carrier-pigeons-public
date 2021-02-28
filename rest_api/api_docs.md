@@ -34,7 +34,7 @@ A queue is a queue and is owned by a User(store owner).
 #### Get Request to base_url/queue/(name(string) GETS QUEUE DATA:
 Will get queue data for the queue where name = the name variable in the url, and returns it in json format as above
 #### Put Request to base_url/queue/(name(string) CREATES A QUEUE:
-*Note when doing a put request you must also provide an argument for maximum occupancy, Example: base_url/queue/(name(string), {'max_occupancy' : interger}*
+*Note when doing a put request you must also provide an argument for maximum occupancy, Example: base_url/queue/(name(string), {'max_occupancy' : interger}* |
 If the name provided is not unique the API will return "Queue Name Already Exists", else it will return the data in json format for the created queue.
 #### Delete Request to base_url/queue/(name(string) DELETES A QUEUE:
 Will delete the queue if it exists (make sure it does exist as it will crash your programm if not, sry for me being lazy)
@@ -53,16 +53,16 @@ Ticket connected to a queue and contains the data for one user(in this case not 
     }
 ### URL: base_url/ticket
 ### Get Request to base_url/ticket GETS TICKET DATA:
-For this get request it is also neccesary to provide an argument: {'ticket_id' : ticket_id}, Example: base_url/ticket, {'ticket_id' : ticket_id}
+For this get request it is also neccesary to provide an argument: {'ticket_id' : ticket_id}, Example: base_url/ticket, {'ticket_id' : ticket_id} |
 This get request will return the data in json format as shown above.
 ### Put Request to base_url/ticket CREATES A TICKET:
-For this put request it is required to provide two arguments: {''queue_id' : queue_id, 'phone_number' : phone_number}, Example: base_url/ticket, {''queue_id' : queue_id, 'phone_number' : phone_number}
+For this put request it is required to provide two arguments: {''queue_id' : queue_id, 'phone_number' : phone_number}, Example: base_url/ticket, {''queue_id' : queue_id, 'phone_number' : phone_number} |
 This put request will return the data for the created Ticket
 
 ## Class Ticket_Delete:
 ### URL: base_url/ticket-delete
 ### Get Request to base_url/ticket-delete DELETES A TICKET:
-This Get Request requires an argument: {'ticket_id' : ticket_id}, Example: base_url/ticket-delete, {'ticket_id' : ticket_id}
+This Get Request requires an argument: {'ticket_id' : ticket_id}, Example: base_url/ticket-delete, {'ticket_id' : ticket_id} |
 This get request will delete the ticket specified.
 
 ## Class Ticket_actions:

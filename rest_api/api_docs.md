@@ -89,3 +89,11 @@ request = PUT https://99bac19acf0e.ngrok.io/ticket, {"queue_id" : interger, "pho
 request = GET https://99bac19acf0e.ngrok.io/ticket-actions/(put ticket_id here)
 ### Deleting a Ticket upon exit of the customer:
 request = DELETE https://99bac19acf0e.ngrok.io/ticket-actions/(put ticket_id here)
+
+# Frequently user GET Requests:
+### Getting data of a User:
+request = GET https://99bac19acf0e.ngrok.io/user/(put user_id here)
+### Getting data of a Queue:
+request = GET https://99bac19acf0e.ngrok.io/queue/(put queue name(not queue_id) here)
+### Getting data of a Ticket:
+request = GET https://99bac19acf0e.ngrok.io/ticket, {"ticket_id" : string(ticket_id)}

@@ -81,8 +81,16 @@ If you have any questions ask Marius S., sry if the docs are hard to read, I am 
 # Frequently used requests:
 ### Creating a User:
 request = PUT https://99bac19acf0e.ngrok.io/user/(put user_id here)
+#### Example:
+r = requests.put(https://99bac19acf0e.ngrok.io/user/marius)
+#### Explanation of example:
+creates a user with user_id marius. Returns json data about the user.
 ### Creating a Queue:
 request = PUT https://99bac19acf0e.ngrok.io/queue/(put queue/store name here), {"max_occupancy" : interger, "user_id" : string}
+#### Example:
+r = requests.put(https://99bac19acf0e.ngrok.io/queue/marius, {"max_occupancy" : 5, "user_id" : "marius"})
+#### Explanation:
+Creates a queue with name marius, max occupancy of 5. The queue is owned by the user marius.
 ### Creating a Ticket:
 request = PUT https://99bac19acf0e.ngrok.io/ticket, {"queue_id" : interger, "phone_number" : string}
 ### Updating a Ticket upon entrance to the store:

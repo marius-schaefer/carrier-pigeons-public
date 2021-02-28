@@ -76,3 +76,16 @@ Basically use the get request when someone enters the store and the delete reque
 Use the requests from Class Ticket to create a ticket, get data from a ticket, and delete a ticket if a user leaves a queue or something before they enter the store.
 
 If you have any questions ask Marius S., sry if the docs are hard to read, I am kind of very sleep deprived atm...
+
+
+# Frequently used requests:
+### Creating a User:
+request = PUT https://99bac19acf0e.ngrok.io/user/(put user_id here)
+### Creating a Queue:
+request = PUT https://99bac19acf0e.ngrok.io/queue/(put queue/store name here), {"max_occupancy" : interger, "user_id" : string}
+### Creating a Ticket:
+request = PUT https://99bac19acf0e.ngrok.io/ticket, {"queue_id" : interger, "phone_number" : string}
+### Updating a Ticket upon entrance to the store:
+request = GET https://99bac19acf0e.ngrok.io/ticket-actions/(put ticket_id here)
+### Deleting a Ticket upon exit of the customer:
+request = DELETE https://99bac19acf0e.ngrok.io/ticket-actions/(put ticket_id here)

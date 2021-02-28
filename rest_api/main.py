@@ -1,7 +1,7 @@
-from flask import Flask
+from flask import Flask, request, redirect
 from flask_restful import Api, Resource, reqparse
 from db_utils import *
-
+from twilio.twiml.messaging_response import MessagingResponse
 
 #Initializing the DB, if this is the first time the main.py has been run
 
@@ -21,6 +21,25 @@ if not ticket_table_exist:
 #API:
 app = Flask(__name__)
 api = Api(app)
+
+
+@app.route("/sms", methods=['GET', 'POST'])
+def incoming_sms():
+    """Send a dynamic reply to an incoming text message"""
+    # Get the message the user sent our Twilio number
+    body = request.values.get('Body', None)
+
+    # Start our TwiML response
+    resp = MessagingResponse()
+
+    # Determine the right reply for this message
+    if body == 'hello':
+        resp.message("Hi!")
+    elif body == 'bye':
+        resp.message("Goodbye")
+
+    return str(resp)
+
 
 
 #User API:
@@ -110,12 +129,25 @@ class Ticket_Delete(Resource):
         return f"{ticket_id} deleted"
 
 
+class Ticket_Actions(Resource):
+    def get(self, ticket_id):
+        ticket_entered(ticket_id)
+        data = get_ticket_data(ticket_id)
+        return data
+
+    def delete(self, ticket_id):
+        delete_ticket_plus_leave_store(ticket_id)
+        return f"{ticket_id} deleted and has left the store"
+
+
+
+
 #Adding Resources:
 api.add_resource(User, "/user/<string:user_id>")
 api.add_resource(Queue, "/queue/<string:name>")
 api.add_resource(Ticket, "/ticket")
 api.add_resource(Ticket_Delete, "/ticket-delete")
-
+api.add_resource(Ticket_Actions, "/ticket-actions/<string:ticket_id>")
 
 
 #Runs the Flask App

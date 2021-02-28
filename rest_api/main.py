@@ -1,7 +1,6 @@
 from flask import Flask, request, redirect
 from flask_restful import Api, Resource, reqparse
 from db_utils import *
-from twilio.twiml.messaging_response import MessagingResponse
 
 #Initializing the DB, if this is the first time the main.py has been run
 
@@ -22,23 +21,6 @@ if not ticket_table_exist:
 app = Flask(__name__)
 api = Api(app)
 
-
-@app.route("/sms", methods=['GET', 'POST'])
-def incoming_sms():
-    """Send a dynamic reply to an incoming text message"""
-    # Get the message the user sent our Twilio number
-    body = request.values.get('Body', None)
-
-    # Start our TwiML response
-    resp = MessagingResponse()
-
-    # Determine the right reply for this message
-    if body == 'hello':
-        resp.message("Hi!")
-    elif body == 'bye':
-        resp.message("Goodbye")
-
-    return str(resp)
 
 
 
@@ -66,12 +48,13 @@ class User(Resource):
     def delete(self, user_id):
         delete_user(user_id)
         
-        return f"{user_id} deleted"
+        return f"user {user_id} deleted"
 
 
 #Queue Argument Parsing:
 queue_put_args = reqparse.RequestParser()
-queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required", required=True)
+queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required")
+queue_put_args.add_argument("user_id", type=str, help="The User who owns this queue")
 
 
 #Queue API:
@@ -91,8 +74,9 @@ class Queue(Resource):
             return "Queue Name Already Exists"
 
     def delete(self, name):
-        delete_queue(name)
-        return f"{name} deleted"
+        data = queue_put_args.parse_args()
+        delete_queue(name, data)
+        return f"queue {name} deleted"
 
 
 #Ticket Argument Parsing:

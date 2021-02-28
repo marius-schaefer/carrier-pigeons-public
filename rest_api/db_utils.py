@@ -29,7 +29,7 @@ def create_user_table():
     c = conn.cursor()
 
     #creates user table
-    c.execute("""CREATE TABLE user (user_id text, queue_id text)""")
+    c.execute("""CREATE TABLE user (user_id text, queue_id interger)""")
     
     conn.commit()
     conn.close()
@@ -85,7 +85,7 @@ def create_user(user_id):
     #creates cursor
     c = conn.cursor()
 
-    c.execute("INSERT INTO user VALUES (?, 'None')", (user_id,))
+    c.execute("INSERT INTO user VALUES (?, 0)", (user_id,))
 
     conn.commit()
     conn.close()
@@ -151,6 +151,7 @@ def create_queue(data, name):
     ticket_prefix = f"{generated_queue_id}-"
     ticket_init = 0
     max_occupancy = data['max_occupancy']
+    user_id = data['user_id']
     
     
     #creates or connects to an existing db
@@ -159,6 +160,7 @@ def create_queue(data, name):
     c = conn.cursor()
 
     c.execute("INSERT INTO queue VALUES (?, ?, ?, ?, ?, 0)", (queue_id, name, ticket_prefix, ticket_init, max_occupancy))
+    c.execute("UPDATE user SET queue_id = ? WHERE user_id = ?", (queue_id, user_id))
 
     conn.commit()
     conn.close()
@@ -204,12 +206,15 @@ def check_queue_name(name):
         return True
 
 
-def delete_queue(name):
+def delete_queue(name, data):
     #creates or connects to an existing db
     conn = sqlite3.connect('viqueue.db')
     #creates cursor
     c = conn.cursor()
 
+    user_id = data['user_id']
+
+    c.execute("UPDATE user SET queue_id = 0 WHERE user_id = ?", (user_id,))
     c.execute("DELETE from queue WHERE name = ?", (name,))
 
     conn.commit()

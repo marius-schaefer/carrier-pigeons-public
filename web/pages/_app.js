@@ -5,7 +5,7 @@ function MyApp({ Component, pageProps }) {
   return (
     <GeistProvider themeType={'dark'}>
     <CssBaseline />
-    <Component/>
+    <Component {...pageProps}/>
   </GeistProvider>
   );
 }

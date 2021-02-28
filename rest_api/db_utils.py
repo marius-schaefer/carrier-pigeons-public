@@ -1,7 +1,13 @@
 import sqlite3
 import random
 import datetime
+from twilio.rest import Client
+import os
 
+#Twilio Stuff:
+account_sid = 'AC7079bc83fc92aa1df930909ad5c7a298'
+auth_token = '8402668beb64cc9726cad329f1d3983f'
+client = Client(account_sid, auth_token)
 
 #DB Initialization Functions:
 def check_for_table(table_name):
@@ -247,7 +253,7 @@ def get_ticket_data(ticket_id):
 
     return_data = {ticket_id : json_formatted_data}
 
-    return return_data
+    return json_formatted_data
 
 
 def create_ticket(queue_id, phone_number):
@@ -261,6 +267,14 @@ def create_ticket(queue_id, phone_number):
     curr_ticket = data[0][3]
     ticket_prefix = data[0][2]
     new_ticket_number = curr_ticket + 1
+
+    conn.commit()
+    conn.close()
+
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
 
     #new data to insert:
     ticket_id = f"{ticket_prefix}"+ f"{new_ticket_number}" 
@@ -287,48 +301,142 @@ def delete_ticket(ticket_id):
     conn.close()
 
 
-def ticket_entered(ticket_id):
+def ticket_entered(queue_id):
+    #Deletes upon entry
+    
     #creates or connects to an existing db
     conn = sqlite3.connect('viqueue.db')
     #creates cursor
     c = conn.cursor()
 
-    date_entered = datetime.datetime.now()
-    
-    c.execute("SELECT * FROM ticket WHERE ticket_id = ?", (ticket_id,))
-    ticket_data = c.fetchall()
-    queue_id = ticket_data[0][1]
-    
+    c.execute("SELECT * FROM ticket WHERE queue_id =? ORDER BY ticket_number ASC", (queue_id,))
+    tickets = c.fetchall()
+    ticket_number = tickets[0][2]
+
     c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
     queue_data = c.fetchall()
     curr_occupancy = queue_data[0][5]
     new_occupancy = curr_occupancy + 1
 
     c.execute("UPDATE queue SET curr_occupancy = ? WHERE queue_id = ?", (new_occupancy, queue_id))
-    c.execute("UPDATE ticket SET date_entered = ? WHERE ticket_id = ?", (date_entered, ticket_id))
-    
+    c.execute("DELETE from ticket WHERE ticket_number = ?", (ticket_number,))
 
     conn.commit()
     conn.close()
 
 
-def delete_ticket_plus_leave_store(ticket_id):
-    delete_ticket(ticket_id)
+def occupant_left_store(queue_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
+    queue_data = c.fetchall()
+    curr_occupancy = queue_data[0][5]
+    if curr_occupancy == 0:
+        pass
+    else:
+        new_occupancy = curr_occupancy - 1
+
+    c.execute("UPDATE queue SET curr_occupancy = ? WHERE queue_id = ?", (new_occupancy, queue_id))
+
+    conn.commit()
+    conn.close()
+
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM ticket WHERE queue_id = ? ORDER BY ticket_number ASC", (queue_id,))
+    data = c.fetchall()
+    phone_number =  data[0][5]
+
+    message = client.messages.create(
+        to='+19174854589',
+        from_='+18177998317',
+        body = 'Hello, you may now enter the store!'
+    )
+    print(message.sid)
+
+
+
+def get_queue_position(ticket_id):
     #creates or connects to an existing db
     conn = sqlite3.connect('viqueue.db')
     #creates cursor
     c = conn.cursor()
 
     c.execute("SELECT * FROM ticket WHERE ticket_id = ?", (ticket_id,))
-    ticket_data = c.fetchall()
-    queue_id = ticket_data[0][1]
-    
-    c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
-    queue_data = c.fetchall()
-    curr_occupancy = queue_data[0][5]
-    new_occupancy = curr_occupancy - 1
 
-    c.execute("UPDATE queue SET curr_occupancy = ? WHERE queue_id = ?", (new_occupancy, queue_id))
+    data = c.fetchall()
+    queue_id = data[0][1]
+    ticket_number = data[0][2]
 
     conn.commit()
     conn.close()
+
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM ticket WHERE queue_id =? ORDER BY ticket_number ASC", (queue_id,))
+    tickets = c.fetchall()
+    first_ticket = tickets[0][2] 
+    index = ticket_number - first_ticket + 1 
+
+    return index
+
+
+def get_queue_length(queue_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM ticket WHERE queue_id =?", (queue_id,))
+    tickets = c.fetchall()
+    queue_length = len(tickets)
+    return queue_length
+
+
+def get_store_occupancy(queue_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM queue WHERE queue_id =?", (queue_id,))
+    queue = c.fetchall()
+
+    return queue[0][5]
+
+
+def get_numbers():
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM queue")
+
+    queues = c.fetchall()
+
+    numbers = []
+
+    for queue in queues:
+        max_occup = queue[4]
+        curr_occup = queue[5]
+        occup = max_occup - curr_occup
+
+        if occup >=1:
+            c.execute("SELECT * FROM ticket WHERE queue_id = ? LIMIT ? ORDER BY ASC", (queue[0], occup))
+            tickets = c.fetchall()
+            for ticket in tickets:
+                numbers.append(ticket[5])
+        else:
+            pass
+
+        return numbers

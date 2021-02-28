@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect
 from flask_restful import Api, Resource, reqparse
 from db_utils import *
-from twilio.twiml.messaging_response import MessagingResponse
+from flask_cors import CORS
 
 #Initializing the DB, if this is the first time the main.py has been run
 
@@ -20,25 +20,9 @@ if not ticket_table_exist:
 
 #API:
 app = Flask(__name__)
+CORS(app)
 api = Api(app)
 
-
-@app.route("/sms", methods=['GET', 'POST'])
-def incoming_sms():
-    """Send a dynamic reply to an incoming text message"""
-    # Get the message the user sent our Twilio number
-    body = request.values.get('Body', None)
-
-    # Start our TwiML response
-    resp = MessagingResponse()
-
-    # Determine the right reply for this message
-    if body == 'hello':
-        resp.message("Hi!")
-    elif body == 'bye':
-        resp.message("Goodbye")
-
-    return str(resp)
 
 
 
@@ -66,12 +50,13 @@ class User(Resource):
     def delete(self, user_id):
         delete_user(user_id)
         
-        return f"{user_id} deleted"
+        return f"user {user_id} deleted"
 
 
 #Queue Argument Parsing:
 queue_put_args = reqparse.RequestParser()
-queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required", required=True)
+queue_put_args.add_argument("max_occupancy", type=int, help="The max_occupancy value (interger) is required")
+queue_put_args.add_argument("user_id", type=str, help="The User who owns this queue")
 
 
 #Queue API:
@@ -91,17 +76,19 @@ class Queue(Resource):
             return "Queue Name Already Exists"
 
     def delete(self, name):
-        delete_queue(name)
-        return f"{name} deleted"
+        data = queue_put_args.parse_args()
+        delete_queue(name, data)
+        return f"queue {name} deleted"
 
 
 #Ticket Argument Parsing:
 ticket_args = reqparse.RequestParser()
 ticket_args.add_argument("ticket_id", type=str, help="ticket_id : (string)")
 ticket_args.add_argument("queue_id", type=int, help="queue_id : (interger)")
+ticket_args.add_argument("phone_number", type=str, help="phone_number : str")
 
 ticket_delete_args = reqparse.RequestParser()
-ticket_delete_args.add_argument("phone_number", type=str, help="phone_number : (string)")
+ticket_delete_args.add_argument("ticket_id", type=str, help="ticket_id : (string)")
 
 
 #Ticket API:
@@ -112,7 +99,7 @@ class Ticket(Resource):
         data = get_ticket_data(ticket_id)
         return data
 
-    def put(self):
+    def post(self):
         args = ticket_args.parse_args()
         queue_id = args['queue_id']
         phone_number = args['phone_number']
@@ -123,23 +110,54 @@ class Ticket(Resource):
 
 class Ticket_Delete(Resource):
     def get(self):
-        args = ticket_args.parse_args()
+        args = ticket_delete_args.parse_args()
         ticket_id = args['ticket_id']
         delete_ticket(ticket_id)
         return f"{ticket_id} deleted"
 
 
+ticket_action_args = reqparse.RequestParser()
+ticket_action_args.add_argument("queue_id", type=int, help="queue_id : int")
+ticket_action_args.add_argument("ticket_id", type=str, help="ticket_id : str")
+
 class Ticket_Actions(Resource):
-    def get(self, ticket_id):
-        ticket_entered(ticket_id)
-        data = get_ticket_data(ticket_id)
-        return data
+    #Entry
+    def get(self):
+        args = ticket_args.parse_args()
+        queue_id = args['queue_id']
+        ticket_entered(queue_id)
+        occupancy = get_store_occupancy(queue_id)
 
-    def delete(self, ticket_id):
-        delete_ticket_plus_leave_store(ticket_id)
-        return f"{ticket_id} deleted and has left the store"
+        return {"curr_occupancy" : occupancy}
 
 
+    
+    #Get Queue_position
+    def post(self):
+        args = ticket_args.parse_args()
+        ticket_id = args['ticket_id']
+        index = get_queue_position(ticket_id)
+        
+        return index
+
+
+class Occupancy(Resource):
+    #Get Store Occupation
+    def get(self, queue_id):
+        occupancy = get_store_occupancy(queue_id)
+        return occupancy
+    #Get Queue Length
+    def post(self, queue_id):
+        length = get_queue_length(queue_id)
+        return length
+
+class Notif(Resource):
+    #Exit
+    def delete(self, queue_id):
+        occupant_left_store(queue_id)
+        occupancy = get_store_occupancy(queue_id)
+
+        return {"curr_occupancy" : occupancy}
 
 
 #Adding Resources:
@@ -147,8 +165,9 @@ api.add_resource(User, "/user/<string:user_id>")
 api.add_resource(Queue, "/queue/<string:name>")
 api.add_resource(Ticket, "/ticket")
 api.add_resource(Ticket_Delete, "/ticket-delete")
-api.add_resource(Ticket_Actions, "/ticket-actions/<string:ticket_id>")
-
+api.add_resource(Ticket_Actions, "/ticket-actions")
+api.add_resource(Occupancy, "/occupancy/<int:queue_id>")
+api.add_resource(Notif, "/notif/<int:queue_id>")
 
 #Runs the Flask App
 if __name__ == "__main__":

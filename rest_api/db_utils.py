@@ -280,3 +280,50 @@ def delete_ticket(ticket_id):
 
     conn.commit()
     conn.close()
+
+
+def ticket_entered(ticket_id):
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    date_entered = datetime.datetime.now()
+    
+    c.execute("SELECT * FROM ticket WHERE ticket_id = ?", (ticket_id,))
+    ticket_data = c.fetchall()
+    queue_id = ticket_data[0][1]
+    
+    c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
+    queue_data = c.fetchall()
+    curr_occupancy = queue_data[0][5]
+    new_occupancy = curr_occupancy + 1
+
+    c.execute("UPDATE queue SET curr_occupancy = ? WHERE queue_id = ?", (new_occupancy, queue_id))
+    c.execute("UPDATE ticket SET date_entered = ? WHERE ticket_id = ?", (date_entered, ticket_id))
+    
+
+    conn.commit()
+    conn.close()
+
+
+def delete_ticket_plus_leave_store(ticket_id):
+    delete_ticket(ticket_id)
+    #creates or connects to an existing db
+    conn = sqlite3.connect('viqueue.db')
+    #creates cursor
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM ticket WHERE ticket_id = ?", (ticket_id,))
+    ticket_data = c.fetchall()
+    queue_id = ticket_data[0][1]
+    
+    c.execute("SELECT * FROM queue WHERE queue_id = ?", (queue_id,))
+    queue_data = c.fetchall()
+    curr_occupancy = queue_data[0][5]
+    new_occupancy = curr_occupancy - 1
+
+    c.execute("UPDATE queue SET curr_occupancy = ? WHERE queue_id = ?", (new_occupancy, queue_id))
+
+    conn.commit()
+    conn.close()
